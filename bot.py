@@ -1,5 +1,4 @@
 from datetime import datetime
-import os
 import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, MessageHandler, filters, ContextTypes
@@ -7,6 +6,7 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, MessageHandle
 list_is_open = True
 students_list = {}
 
+# قائمة الأدعية
 duas = [
     "اللَّهُمَّ إِنِّي أَسْأَلُكَ العَفْوَ وَالعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ",
     "اللَّهُمَّ آتِنَا في الدُّنْيَا حَسَنَةً وَفي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
@@ -31,6 +31,8 @@ def get_current_date():
 def get_formatted_text():
     status_text = "مفتوحة 🔓" if list_is_open else "مغلقة 🔒"
     selected_dua = random.choice(duas)
+    
+    # الرموز المتناوبة
     decorations = ["🍃 ⃞ـ💎", "👑 ⃞ـ💎"]
     
     roles_text = ""
@@ -189,10 +191,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "toggle_list":
         list_is_open = not list_is_open
+        
+        # رسائل التنبيه عند الفتح أو الإغلاق
         if not list_is_open:
             await query.message.chat.send_message("🔒 **عذراً، تم إغلاق باب التسجيل في القائمة الآن.**", parse_mode="Markdown")
         else:
             await query.message.chat.send_message("🔓 **تم فتح باب التسجيل في القائمة، يمكنكم الآن حجز أدواركم.**", parse_mode="Markdown")
+            
         await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة:", reply_markup=get_admin_keyboard())
 
     elif data == "reset_new_list":
@@ -208,13 +213,7 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
         await show_main_menu(update, context)
 
 def main():
-    # سحب التوكن أماناً من إعدادات النظام في الاستضافة
-    TOKEN = os.getenv("8818665087:AAGPBN9ODdoBjwl4LtVcfWrHdQJQO8HrNrY")
-    if not TOKEN:
-        print("خطأ: لم يتم العثور على التوكن في متغيرات البيئة!")
-        return
-
-    app = ApplicationBuilder().token(TOKEN).build()
+    app = ApplicationBuilder().token("8818665087:AAGPBN9ODdoBjwl4LtVcfWrHdQJQO8HrNrY").build()
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
     app.add_handler(CallbackQueryHandler(button_handler))
