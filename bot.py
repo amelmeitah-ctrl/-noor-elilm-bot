@@ -265,7 +265,7 @@ def run_server():
 def main():
     threading.Thread(target=run_server, daemon=True).start()
 
-    app = ApplicationBuilder().token("8818665087:AAGPBN00DdoBjw14LtVcfVrHdQJQ08HrNrY").build()
+    app = ApplicationBuilder().token("8818665087:AAGPBN9ODdoBjwl4LtVcfWrHdQJQO8HrNrY").build()
 
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND), handle_text_messages))
     app.add_handler(CallbackQueryHandler(button_handler))
