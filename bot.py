@@ -134,8 +134,11 @@ def get_riwayat_keyboard(reader_name):
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = get_formatted_text()
     reply_markup = get_channel_keyboard()
-    if update.message:
-        await update.message.reply_text(text, parse_mode="HTML", reply_markup=reply_markup)
+    
+    target_message = update.message or update.channel_post
+    
+    if target_message:
+        await target_message.reply_text(text, parse_mode="HTML", reply_markup=reply_markup)
     elif update.callback_query:
         try:
             await update.callback_query.message.edit_text(text, parse_mode="HTML", reply_markup=reply_markup)
@@ -231,11 +234,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_main_menu(update, context)
 
 async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not update.message or not update.message.text:
+    msg = update.message or update.channel_post
+    if not msg or not msg.text:
         return
-    text = update.message.text.strip()
-    # الاستجابة لمختلف صيغ كلمة إجازة أو عبارة بدء قائمة
-    allowed_words = ["إجازة", "اجازه", "اجازة", "بدء قائمة"]
+    text = msg.text.strip()
+    
+    # الاستجابة فقط لصيغ كلمة إجازة
+    allowed_words = ["إجازة", "اجازه", "اجازة"]
     if text in allowed_words:
         await show_main_menu(update, context)
 
@@ -255,7 +260,7 @@ def main():
 
     app = ApplicationBuilder().token("8818665087:AAGPBN9ODdoBjwl4LtVcfWrHdQJQO8HrNrY").build()
 
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
+    app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND), handle_text_messages))
     app.add_handler(CallbackQueryHandler(button_handler))
 
     print("البوت يعمل الآن بنجاح...")
