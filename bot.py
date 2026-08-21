@@ -53,7 +53,7 @@ def get_current_date():
     return f"{day_name} {day_num} {month_name} {year_num} مـ — {hijri_date}"
 
 def get_formatted_text():
-    status_text = "🟢 مفتوحة (متاح التسجيل) 🔓" if list_is_open else "🔴 مغلقة 🔒"
+    status_text = "مفتوحة 🔓" if list_is_open else "مغلقة 🔒"
     selected_dua = random.choice(duas)
     decorations = ["🍃 ⃞ـ💎", "👑 ⃞ـ💎"]
     
@@ -231,8 +231,12 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await show_main_menu(update, context)
 
 async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = update.message.text
-    if text == "اجازة":
+    if not update.message or not update.message.text:
+        return
+    text = update.message.text.strip()
+    # الاستجابة لمختلف صيغ كلمة إجازة أو عبارة بدء قائمة
+    allowed_words = ["إجازة", "اجازه", "اجازة", "بدء قائمة"]
+    if text in allowed_words:
         await show_main_menu(update, context)
 
 class SimpleHandler(BaseHTTPRequestHandler):
