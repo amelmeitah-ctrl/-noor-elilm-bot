@@ -19,21 +19,15 @@ duas = [
 ]
 
 def get_hijri_date():
-    # حساب مبسط أو تقريبي دقيق لتاريخ اليوم الهجري (مثال: متوافق مع شهر ربيع الأول 1448 هـ)
     now = datetime.now()
-    # يمكننا حساب فارق الأيام بدقة أو ربطه بالتاريخ الميلادي الحالي
-    days_diff = (now - datetime(2026, 6, 16)).days  # 1 محرم 1448 هـ يوافق 16 يونيو 2026
-    
-    # الأشهر الهجرية وأيامها التقريبية
+    days_diff = (now - datetime(2026, 6, 16)).days  
     hijri_months = [
         ("محرم", 29), ("صفر", 30), ("ربيع الأول", 29), ("ربيع الآخر", 30),
         ("جمادى الأولى", 30), ("جمادى الآخرة", 29), ("رجب", 30), ("شعبان", 30),
         ("رمضان", 29), ("شوال", 30), ("ذو القعدة", 29), ("ذو الحجة", 30)
     ]
-    
     h_year = 1448
     current_day_count = max(0, days_diff)
-    
     m_index = 0
     while current_day_count >= hijri_months[m_index][1]:
         current_day_count -= hijri_months[m_index][1]
@@ -41,10 +35,8 @@ def get_hijri_date():
         if m_index >= 12:
             m_index = 0
             h_year += 1
-            
     h_day = current_day_count + 1
     h_month_name = hijri_months[m_index][0]
-    
     return f"{h_day} {h_month_name} {h_year} هـ"
 
 def get_current_date():
@@ -56,7 +48,6 @@ def get_current_date():
     day_num = now.strftime("%d")
     month_name = months_ar.get(now.month, "")
     year_num = now.strftime("%Y")
-    
     hijri_date = get_hijri_date()
     
     return f"{day_name} {day_num} {month_name} {year_num} مـ الموافق {hijri_date}"
@@ -64,7 +55,6 @@ def get_current_date():
 def get_formatted_text():
     status_text = "مفتوحة 🔓" if list_is_open else "مغلقة 🔒"
     selected_dua = random.choice(duas)
-    
     decorations = ["🍃 ⃞ـ💎", "👑 ⃞ـ💎"]
     
     roles_text = ""
@@ -166,6 +156,13 @@ async def is_user_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> b
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global list_is_open
     query = update.callback_query
+    
+    # الرد الفوري على الضغطة لمنع انتهاء المهلة
+    try:
+        await query.answer()
+    except:
+        pass
+
     data = query.data
     user_id = query.from_user.id
     user_name = query.from_user.full_name
@@ -173,10 +170,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     admin_actions = ["admin_main", "toggle_list", "reset_new_list", "admin_mark_list"]
     if data in admin_actions or data.startswith("mark_"):
         if not await is_user_admin(update, context):
-            await query.answer("هذا خاص بالمشرفين فقط ❌", show_alert=True)
+            try:
+                await query.answer("هذا خاص بالمشرفين فقط ❌", show_alert=True)
+            except:
+                pass
             return
-
-    await query.answer()
 
     if data == "admin_main":
         await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة:", reply_markup=get_admin_keyboard())
@@ -191,7 +189,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         target_uid = int(data.split("_")[1])
         if target_uid in students_list:
             students_list[target_uid]['status'] = "✅"
-            await query.answer("تم تعليمه بأنه قرأ ✅", show_alert=True)
             await show_main_menu(update, context)
 
     elif data == "register_name":
@@ -206,7 +203,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data == "delete_name":
         if user_id in students_list:
             del students_list[user_id]
-            await query.answer("تم حذف اسمك بنجاح ✅", show_alert=True)
             await show_main_menu(update, context)
         else:
             await query.answer("اسمك غير مسجل في القائمة أصلاً!", show_alert=True)
@@ -218,7 +214,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif data.startswith("reg_riwaya_"):
         riwaya_name = data.split("_")[2]
         students_list[user_id] = {"name": user_name, "riwaya": riwaya_name, "status": "❓"}
-        await query.answer(f"تم تسجيلك برواية {riwaya_name} بنجاح ✅", show_alert=True)
         await show_main_menu(update, context)
 
     elif data == "toggle_list":
