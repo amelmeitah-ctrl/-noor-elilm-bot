@@ -50,10 +50,10 @@ def get_current_date():
     year_num = now.strftime("%Y")
     hijri_date = get_hijri_date()
     
-    return f"{day_name} {day_num} {month_name} {year_num} مـ الموافق {hijri_date}"
+    return f"{day_name} {day_num} {month_name} {year_num} مـ — {hijri_date}"
 
 def get_formatted_text():
-    status_text = "مفتوحة 🔓" if list_is_open else "مغلقة 🔒"
+    status_text = "🟢 مفتوحة (متاح التسجيل) 🔓" if list_is_open else "🔴 مغلقة 🔒"
     selected_dua = random.choice(duas)
     decorations = ["🍃 ⃞ـ💎", "👑 ⃞ـ💎"]
     
@@ -68,11 +68,11 @@ def get_formatted_text():
 
     return f"""👑 أكاديمية نور العلم للقراءة والإقراء والمتون العلمية 👑
 
-• <u>📅 {get_current_date()}</u>
+📅 {get_current_date()}
 
 <b>🌹 حلقة إجازة حفظ القرآن الكريم بالقراءات العشر 🌹</b>
 
-◽حالة القائمة: {status_text}
+حالة القائمة: {status_text}
 
 ❖──────────────────❖
 <u>قائمة الأدواࢪ:</u> 
@@ -157,7 +157,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     global list_is_open
     query = update.callback_query
     
-    # الرد الفوري على الضغطة لمنع انتهاء المهلة
     try:
         await query.answer()
     except:
@@ -260,3 +259,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
