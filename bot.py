@@ -82,7 +82,6 @@ def get_formatted_text():
 📚✨⌯⌲ {selected_motivation} ⌯⌲✨📚
 
 •🌹🕊 <b>حلقة الإجازة في حفظ القرآن الكريم بالقراءات العشر</b> 🌹🕊
-<u>                                                                   </u>
 
 • <b>حالة القائمة:</b> {status_text}
 ​༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫
@@ -254,8 +253,13 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        self.send_header("Content-type", "text/plain")
         self.end_headers()
         self.wfile.write(b"Bot is running successfully!")
+
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
 
 def run_server():
     port = int(os.environ.get("PORT", 10000))
