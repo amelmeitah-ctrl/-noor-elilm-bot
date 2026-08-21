@@ -1,3 +1,6 @@
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
+import os
 from datetime import datetime
 import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -15,6 +18,35 @@ duas = [
     "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ زَوَالِ نِعْمَتِكَ، وَتَحَوُّلِ عَافِيَتِكَ، وَفُجَاءَةِ نِقْمَتِكَ"
 ]
 
+def get_hijri_date():
+    # حساب مبسط أو تقريبي دقيق لتاريخ اليوم الهجري (مثال: متوافق مع شهر ربيع الأول 1448 هـ)
+    now = datetime.now()
+    # يمكننا حساب فارق الأيام بدقة أو ربطه بالتاريخ الميلادي الحالي
+    days_diff = (now - datetime(2026, 6, 16)).days  # 1 محرم 1448 هـ يوافق 16 يونيو 2026
+    
+    # الأشهر الهجرية وأيامها التقريبية
+    hijri_months = [
+        ("محرم", 29), ("صفر", 30), ("ربيع الأول", 29), ("ربيع الآخر", 30),
+        ("جمادى الأولى", 30), ("جمادى الآخرة", 29), ("رجب", 30), ("شعبان", 30),
+        ("رمضان", 29), ("شوال", 30), ("ذو القعدة", 29), ("ذو الحجة", 30)
+    ]
+    
+    h_year = 1448
+    current_day_count = max(0, days_diff)
+    
+    m_index = 0
+    while current_day_count >= hijri_months[m_index][1]:
+        current_day_count -= hijri_months[m_index][1]
+        m_index += 1
+        if m_index >= 12:
+            m_index = 0
+            h_year += 1
+            
+    h_day = current_day_count + 1
+    h_month_name = hijri_months[m_index][0]
+    
+    return f"{h_day} {h_month_name} {h_year} هـ"
+
 def get_current_date():
     now = datetime.now()
     days_ar = {"Sunday": "الأحد", "Monday": "الإثنين", "Tuesday": "الثلاثاء", "Wednesday": "الأربعاء", "Thursday": "الخميس", "Friday": "الجمعة", "Saturday": "السبت"}
@@ -24,7 +56,8 @@ def get_current_date():
     day_num = now.strftime("%d")
     month_name = months_ar.get(now.month, "")
     year_num = now.strftime("%Y")
-    hijri_date = "7 ربيع الأول 1448 هـ" 
+    
+    hijri_date = get_hijri_date()
     
     return f"{day_name} {day_num} {month_name} {year_num} مـ الموافق {hijri_date}"
 
@@ -32,7 +65,6 @@ def get_formatted_text():
     status_text = "مفتوحة 🔓" if list_is_open else "مغلقة 🔒"
     selected_dua = random.choice(duas)
     
-    # الرموز المتناوبة
     decorations = ["🍃 ⃞ـ💎", "👑 ⃞ـ💎"]
     
     roles_text = ""
@@ -191,13 +223,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "toggle_list":
         list_is_open = not list_is_open
-        
-        # رسائل التنبيه عند الفتح أو الإغلاق
         if not list_is_open:
             await query.message.chat.send_message("🔒 **عذراً، تم إغلاق باب التسجيل في القائمة الآن.**", parse_mode="Markdown")
         else:
             await query.message.chat.send_message("🔓 **تم فتح باب التسجيل في القائمة، يمكنكم الآن حجز أدواركم.**", parse_mode="Markdown")
-            
         await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة:", reply_markup=get_admin_keyboard())
 
     elif data == "reset_new_list":
@@ -212,7 +241,20 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
     if text == "اجازة":
         await show_main_menu(update, context)
 
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running successfully!")
+
+def run_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(('0.0.0.0', port), SimpleHandler)
+    server.serve_forever()
+
 def main():
+    threading.Thread(target=run_server, daemon=True).start()
+
     app = ApplicationBuilder().token("8818665087:AAGPBN9ODdoBjwl4LtVcfWrHdQJQO8HrNrY").build()
 
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_messages))
@@ -223,4 +265,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
