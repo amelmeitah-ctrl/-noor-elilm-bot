@@ -9,24 +9,20 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, MessageHandle
 list_is_open = True
 students_list = {}
 
-# أدعية متغيرة فخمة ومؤثرة
+# أدعية متغيرة فاخرة ومباركة
 duas = [
-    "اللَّهُمَّ إِنِّي أَسْأَلُكَ العَفْوَ وَالعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ",
-    "اللَّهُمَّ آتِنَا في الدُّنْيَا حَسَنَةً وَفي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
-    "اللَّهُمَّ يَا مُقَلِّبَ القُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ",
-    "رَبِّ أَعِنِّى وَلا تُعِنْ عَلَيَّ، وَانْصُرْنِي وَلا تَنْصُرْ عَلَيَّ",
-    "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ زَوَالِ نِعْمَتِكَ، وَتَحَوُّلِ عَافِيَتِكَ، وَفُجَاءَةِ نِقْمَتِكَ",
-    "اللَّهُمَّ اجْعَلِ القُرْآنَ رَبِيعَ قُلُوبِنَا، وَنُورَ صُدُورِنَا، وَجَلَاءَ أَحْزَانِنَا"
+    "⊰🌹⊱ رَبِّ أَعِنِّى وَلا تُعِنْ عَلَيَّ، وَانْصُرْنِي وَلا تَنْصُرْ عَلَيَّ ⊰🌹⊱",
+    "⊰🌹⊱ اللَّهُمَّ إِنِّي أَسْأَلُكَ العَفْوَ وَالعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ ⊰🌹⊱",
+    "⊰🌹⊱ اللَّهُمَّ يَا مُقَلِّبَ القُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ ⊰🌹⊱",
+    "⊰🌹⊱ اللَّهُمَّ اجْعَلِ القُرْآنَ رَبِيعَ قُلُوبِنَا، وَنُورَ صُدُورِنَا ⊰🌹⊱"
 ]
 
-# عبارات تحفيزية رسمية وعميقة عن أهل القرآن (متغيرة يومياً/عند كل تحديث)
+# عبارات تحفيزية رسمية وعميقة عن أهل القرآن
 motivations = [
     "«أهل القرآن هم أهل الله وخاصته» — هنيئاً لمن اختاره الله ليحفظ كلامه في صدره.",
     "قال ابن مسعود رضي الله عنه: «ينبغي لحامل القرآن أن يُعرف بليله إذا الناس نهار، وبنومه إذا الناس سهار».",
-    "إن الذي في جوفه بيت خرب كالبيت الخرب، والذي ليس في جوفه شيء من القرآن كالبيت الخرب.",
-    "حفظ القرآن في الصدر يورث خشية الله، ورفعة في الدارين، ونوراً يقذفه الله في قلب صاحبه.",
     "قال الإمام الشاطبي رحمه الله: «وفي الصدر قرآنٌ يورثُ صاحبه عِزّاً ومجدًا لا يُبارى».",
-    "استقيموا على طريق القرآن، فإن, من سار على درب الحفاظ وصل إلى أعالي الجنان.",
+    "حفظ القرآن في الصدر يورث خشية الله، ورفعة في الدارين، ونوراً يقذفه الله في قلب صاحبه.",
     "القرآن كنزٌ لا يفنى، وكلما بذلتَ له وقتك وعزيمتك، أعطاك من بركاته وأسراره."
 ]
 
@@ -62,19 +58,17 @@ def get_current_date():
     year_num = now.strftime("%Y")
     hijri_date = get_hijri_date()
     
-    return f"{day_name} {day_num} {month_name} {year_num} مـ — {hijri_date}"
+    return f"• {day_name} {day_num} {month_name} {year_num} مـ — {hijri_date}"
 
 def get_formatted_text():
-    status_text = "مفتوحة 🔓" if list_is_open else "مغلقة 🔒"
+    status_text = "مفتوحة 🔓 🟢" if list_is_open else "مغلقة 🔒 🔴"
     selected_dua = random.choice(duas)
     selected_motivation = random.choice(motivations)
     
-    # قائمة الأيقونات المتسلسلة المخصصة للأدوار (من 1 إلى 10 وأكثر)
     slot_icons = ["👑", "🌹", "✨", "🌼", "🕌", "🌷", "🍃", "🌟", "💮", "💫"]
     
     roles_text = ""
     for idx, (uid, data) in enumerate(students_list.items(), 1):
-        # اختيار الأيقونة بناءً على الترتيب، وإذا زاد العدد عن 10 تتكرر الأيقونات بسلاسة
         icon = slot_icons[(idx - 1) % len(slot_icons)]
         profile_link = f"<a href='tg://user?id={uid}'>{data['name']}</a>"
         roles_text += f"{idx} {icon} ⃞ـ💎 {profile_link} — {data['riwaya']} {data['status']}\n"
@@ -82,28 +76,27 @@ def get_formatted_text():
     if not roles_text:
         roles_text = "لا توجد أدوار مسجلة حتى الآن، بادر بحجز دورك.\n"
 
-    return f"""📚👑   <b>أڪاديمية نـور الـعـلم للقراءة والإقراء والمتون العلمية</b> 👑   📚
-
-<u>• {get_current_date()}</u>
-
-༄ؘ ۪۪۫۫ ▹👑🌹◃ ༄ؘ ۪۪۫۫ <b>حلقة إجازة حفظ القرآن الكريم بالقراءات العشر</b> ༄ؘ ۪۪۫۫ ▹👑🌹◃ ༄ؘ ۪۪۫۫
+    return f"""📚👑   <b>أكاديمية نور العلم للقراءة والإقراء والمتون العلمية</b>   👑   📚
+<u>{get_current_date()}</u>
 
 📚✨⌯⌲ {selected_motivation} ⌯⌲✨📚
 
-حالة القائمة: {status_text}🟢
+•🌹🕊 <b>حلقة الإجازة في حفظ القرآن الكريم بالقراءات العشر</b> 🌹🕊
+<u>                                                                   </u>
 
-༄ؘ ۪۪۫۫ ▹🌹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹🌹◃ ༄ؘ ۪۪۫۫
-💎📝 <u>قائمة الأدواࢪ:</u> 📝💎
+• <b>حالة القائمة:</b> {status_text}
+​༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫
+✨📝 <b>قائمة الأدوار:</b> 📝✨
 
 {roles_text}
-༄ؘ ۪۪۫۫ ▹🌹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹🌹◃ ༄ؘ ۪۪۫۫
- ⊰🌹⊱ <b>{selected_dua}</b>  ⊰🌹⊱"""
+​༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫
+{selected_dua}"""
 
 def get_channel_keyboard():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("💎 📝 أريد دور قراءة مبارك", callback_data="register_name")],
+        [InlineKeyboardButton("💎 📝 أريد دور قراءة", callback_data="register_name")],
         [InlineKeyboardButton("❌ إزالة اسمي من القائمة", callback_data="delete_name")],
-        [InlineKeyboardButton("⚙️ لوحة إعدادات المشرف/ة الفاخرة", callback_data="admin_main")]
+        [InlineKeyboardButton("⚙️ لوحة إعدادات المشرفين", callback_data="admin_main")]
     ])
 
 def get_admin_keyboard():
@@ -197,7 +190,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
 
     if data == "admin_main":
-        await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة الفاخرة:", reply_markup=get_admin_keyboard())
+        await query.message.edit_text("⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard())
 
     elif data == "admin_mark_list":
         if not students_list:
@@ -238,15 +231,13 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "toggle_list":
         list_is_open = not list_is_open
-        if not list_is_open:
-            await query.message.chat.send_message("🔒 **عذراً، تم إغلاق باب التسجيل في القائمة الآن.**", parse_mode="Markdown")
-        else:
-            await query.message.chat.send_message("🔓 **تم فتح باب التسجيل في القائمة، يمكنكم الآن حجز أدواركم.**", parse_mode="Markdown")
-        await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة الفاخرة:", reply_markup=get_admin_keyboard())
+        status_msg = "🔒 **عذراً، تم إغلاق باب التسجيل في القائمة الآن.**" if not list_is_open else "🔓 **تم فتح باب التسجيل في القائمة، يمكنكم الآن حجز أدواركم.**"
+        await query.message.chat.send_message(status_msg, parse_mode="Markdown")
+        await query.message.edit_text("⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard())
 
     elif data == "reset_new_list":
         students_list.clear()
-        await query.message.edit_text("تم بدء قائمة جديدة مباركة ✅\n⚙️ لوحة تحكم المشرف/ة:", reply_markup=get_admin_keyboard())
+        await query.message.edit_text("تم بدء قائمة جديدة مباركة ✅\n⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard())
 
     elif data == "back_to_main":
         await show_main_menu(update, context)
@@ -257,8 +248,7 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
         return
     text = msg.text.strip()
     
-    allowed_words = ["إجازة", "اجازه", "اجازة"]
-    if text in allowed_words:
+    if text in ["إجازة", "اجازه", "اجازة"]:
         await show_main_menu(update, context)
 
 class SimpleHandler(BaseHTTPRequestHandler):
@@ -275,7 +265,7 @@ def run_server():
 def main():
     threading.Thread(target=run_server, daemon=True).start()
 
-    app = ApplicationBuilder().token("8818665087:AAGPBN9ODdoBjwl4LtVcfWrHdQJQO8HrNrY").build()
+    app = ApplicationBuilder().token("8818665087:AAGPBN00DdoBjw14LtVcfVrHdQJQ08HrNrY").build()
 
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND), handle_text_messages))
     app.add_handler(CallbackQueryHandler(button_handler))
