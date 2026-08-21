@@ -9,13 +9,25 @@ from telegram.ext import ApplicationBuilder, CallbackQueryHandler, MessageHandle
 list_is_open = True
 students_list = {}
 
-# قائمة الأدعية
+# أدعية متغيرة فخمة ومؤثرة
 duas = [
     "اللَّهُمَّ إِنِّي أَسْأَلُكَ العَفْوَ وَالعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ",
     "اللَّهُمَّ آتِنَا في الدُّنْيَا حَسَنَةً وَفي الآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ",
     "اللَّهُمَّ يَا مُقَلِّبَ القُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ",
     "رَبِّ أَعِنِّى وَلا تُعِنْ عَلَيَّ، وَانْصُرْنِي وَلا تَنْصُرْ عَلَيَّ",
-    "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ زَوَالِ نِعْمَتِكَ، وَتَحَوُّلِ عَافِيَتِكَ، وَفُجَاءَةِ نِقْمَتِكَ"
+    "اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنْ زَوَالِ نِعْمَتِكَ، وَتَحَوُّلِ عَافِيَتِكَ، وَفُجَاءَةِ نِقْمَتِكَ",
+    "اللَّهُمَّ اجْعَلِ القُرْآنَ رَبِيعَ قُلُوبِنَا، وَنُورَ صُدُورِنَا، وَجَلَاءَ أَحْزَانِنَا"
+]
+
+# عبارات تحفيزية رسمية وعميقة عن أهل القرآن (متغيرة يومياً/عند كل تحديث)
+motivations = [
+    "«أهل القرآن هم أهل الله وخاصته» — هنيئاً لمن اختاره الله ليحفظ كلامه في صدره.",
+    "قال ابن مسعود رضي الله عنه: «ينبغي لحامل القرآن أن يُعرف بليله إذا الناس نهار، وبنومه إذا الناس سهار».",
+    "إن الذي في جوفه بيت خرب كالبيت الخرب، والذي ليس في جوفه شيء من القرآن كالبيت الخرب.",
+    "حفظ القرآن في الصدر يورث خشية الله، ورفعة في الدارين، ونوراً يقذفه الله في قلب صاحبه.",
+    "قال الإمام الشاطبي رحمه الله: «وفي الصدر قرآنٌ يورثُ صاحبه عِزّاً ومجدًا لا يُبارى».",
+    "استقيموا على طريق القرآن، فإن, من سار على درب الحفاظ وصل إلى أعالي الجنان.",
+    "القرآن كنزٌ لا يفنى، وكلما بذلتَ له وقتك وعزيمتك، أعطاك من بركاته وأسراره."
 ]
 
 def get_hijri_date():
@@ -24,7 +36,7 @@ def get_hijri_date():
     hijri_months = [
         ("محرم", 29), ("صفر", 30), ("ربيع الأول", 29), ("ربيع الآخر", 30),
         ("جمادى الأولى", 30), ("جمادى الآخرة", 29), ("رجب", 30), ("شعبان", 30),
-        ("رمضان", 29), ("شوال", 30), ("ذو القعدة", 29), ("ذو الحجة", 30)
+        ("رمضان", 29), ("شوال", 30), ("ذو القعدة", 30), ("ذو الحجة", 29)
     ]
     h_year = 1448
     current_day_count = max(0, days_diff)
@@ -55,53 +67,59 @@ def get_current_date():
 def get_formatted_text():
     status_text = "مفتوحة 🔓" if list_is_open else "مغلقة 🔒"
     selected_dua = random.choice(duas)
-    decorations = ["🍃 ⃞ـ💎", "👑 ⃞ـ💎"]
+    selected_motivation = random.choice(motivations)
+    
+    # قائمة الأيقونات المتسلسلة المخصصة للأدوار (من 1 إلى 10 وأكثر)
+    slot_icons = ["👑", "🌹", "✨", "🌼", "🕌", "🌷", "🍃", "🌟", "💮", "💫"]
     
     roles_text = ""
     for idx, (uid, data) in enumerate(students_list.items(), 1):
-        deco = decorations[(idx - 1) % len(decorations)]
+        # اختيار الأيقونة بناءً على الترتيب، وإذا زاد العدد عن 10 تتكرر الأيقونات بسلاسة
+        icon = slot_icons[(idx - 1) % len(slot_icons)]
         profile_link = f"<a href='tg://user?id={uid}'>{data['name']}</a>"
-        roles_text += f"{idx} {deco} {profile_link} — {data['riwaya']} {data['status']}\n"
+        roles_text += f"{idx} {icon} ⃞ـ💎 {profile_link} — {data['riwaya']} {data['status']}\n"
     
     if not roles_text:
-        roles_text = "لا توجد أدوار مسجلة حالياً.\n"
+        roles_text = "لا توجد أدوار مسجلة حتى الآن، بادر بحجز دورك.\n"
 
-    return f"""👑 أكاديمية نور العلم للقراءة والإقراء والمتون العلمية 👑
+    return f"""📚👑   <b>أڪاديمية نـور الـعـلم للقراءة والإقراء والمتون العلمية</b> 👑   📚
 
-📅 {get_current_date()}
+<u>• {get_current_date()}</u>
 
-<b>🌹 حلقة إجازة حفظ القرآن الكريم بالقراءات العشر 🌹</b>
+༄ؘ ۪۪۫۫ ▹👑🌹◃ ༄ؘ ۪۪۫۫ <b>حلقة إجازة حفظ القرآن الكريم بالقراءات العشر</b> ༄ؘ ۪۪۫۫ ▹👑🌹◃ ༄ؘ ۪۪۫۫
 
-حالة القائمة: {status_text}
+📚✨⌯⌲ {selected_motivation} ⌯⌲✨📚
 
-❖──────────────────❖
-<u>قائمة الأدواࢪ:</u> 
+حالة القائمة: {status_text}🟢
+
+༄ؘ ۪۪۫۫ ▹🌹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹🌹◃ ༄ؘ ۪۪۫۫
+💎📝 <u>قائمة الأدواࢪ:</u> 📝💎
 
 {roles_text}
-❖──────────────────❖
-🌹 {selected_dua} 🌹"""
+༄ؘ ۪۪۫۫ ▹🌹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹🌹◃ ༄ؘ ۪۪۫۫
+ ⊰🌹⊱ <b>{selected_dua}</b>  ⊰🌹⊱"""
 
 def get_channel_keyboard():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("📝 أريد دور قراءة", callback_data="register_name")],
-        [InlineKeyboardButton("❌ إزالة اسمي", callback_data="delete_name")],
-        [InlineKeyboardButton("⚙️ لوحة إعدادات المشرف/ة", callback_data="admin_main")]
+        [InlineKeyboardButton("💎 📝 أريد دور قراءة مبارك", callback_data="register_name")],
+        [InlineKeyboardButton("❌ إزالة اسمي من القائمة", callback_data="delete_name")],
+        [InlineKeyboardButton("⚙️ لوحة إعدادات المشرف/ة الفاخرة", callback_data="admin_main")]
     ])
 
 def get_admin_keyboard():
-    toggle_text = "🔒 إغلاق القائمة" if list_is_open else "🔓 فتح القائمة"
+    toggle_text = "🔒 إغلاق القائمة مؤقتاً" if list_is_open else "🔓 فتح القائمة للتسجيل"
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(toggle_text, callback_data="toggle_list")],
-        [InlineKeyboardButton("✅ تعليم من قرأ", callback_data="admin_mark_list")],
-        [InlineKeyboardButton("🔄 بدء قائمة جديدة", callback_data="reset_new_list")],
-        [InlineKeyboardButton("🔙 رجوع", callback_data="back_to_main")]
+        [InlineKeyboardButton("✅ تعليم من أتم القراءة", callback_data="admin_mark_list")],
+        [InlineKeyboardButton("🔄 تدوير وبدء قائمة جديدة", callback_data="reset_new_list")],
+        [InlineKeyboardButton("🔙 العودة للقائمة الرئيسية", callback_data="back_to_main")]
     ])
 
 def get_mark_student_keyboard():
     keyboard = []
     for uid, data in students_list.items():
         keyboard.append([InlineKeyboardButton(f"👤 {data['name']}", callback_data=f"mark_{uid}")])
-    keyboard.append([InlineKeyboardButton("🔙 رجوع", callback_data="admin_main")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع لوحة المشرفين", callback_data="admin_main")])
     return InlineKeyboardMarkup(keyboard)
 
 riwayat_dict = {
@@ -121,14 +139,14 @@ def get_readers_keyboard():
     keyboard = []
     for reader in riwayat_dict.keys():
         keyboard.append([InlineKeyboardButton(f"📖 الإمام {reader}", callback_data=f"reg_reader_{reader}")])
-    keyboard.append([InlineKeyboardButton("🔙 إلغاء", callback_data="back_to_main")])
+    keyboard.append([InlineKeyboardButton("🔙 إلغاء والرجوع", callback_data="back_to_main")])
     return InlineKeyboardMarkup(keyboard)
 
 def get_riwayat_keyboard(reader_name):
     keyboard = []
     for riwaya in riwayat_dict.get(reader_name, []):
         keyboard.append([InlineKeyboardButton(f"🔹 رواية/طريق {riwaya}", callback_data=f"reg_riwaya_{riwaya}")])
-    keyboard.append([InlineKeyboardButton("🔙 رجوع للقراء", callback_data="register_name")])
+    keyboard.append([InlineKeyboardButton("🔙 رجوع لاختيار القراء", callback_data="register_name")])
     return InlineKeyboardMarkup(keyboard)
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -173,19 +191,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if data in admin_actions or data.startswith("mark_"):
         if not await is_user_admin(update, context):
             try:
-                await query.answer("هذا خاص بالمشرفين فقط ❌", show_alert=True)
+                await query.answer("هذا خاص بالمشرفين الأفاضل فقط ❌", show_alert=True)
             except:
                 pass
             return
 
     if data == "admin_main":
-        await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة:", reply_markup=get_admin_keyboard())
+        await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة الفاخرة:", reply_markup=get_admin_keyboard())
 
     elif data == "admin_mark_list":
         if not students_list:
-            await query.answer("القائمة فارغة!", show_alert=True)
+            await query.answer("القائمة فارغة تماماً!", show_alert=True)
         else:
-            await query.message.edit_text("اختر الطالب لتعليمه بأنه قرأ:", reply_markup=get_mark_student_keyboard())
+            await query.message.edit_text("اختر الطالب لتعليم إتمامه القراءة:", reply_markup=get_mark_student_keyboard())
 
     elif data.startswith("mark_"):
         target_uid = int(data.split("_")[1])
@@ -195,23 +213,23 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif data == "register_name":
         if not list_is_open:
-            await query.answer("عذراً انتهى وقت تسجيل الأدوار 🔒", show_alert=True)
+            await query.answer("عذراً، باب التسجيل مغلق مؤقتاً 🔒", show_alert=True)
             return
         if user_id in students_list:
-            await query.answer("أنت مسجل في القائمة بالفعل ⚠️", show_alert=True)
+            await query.answer("أنت مسجل بالفعل في هذه القائمة ⚠️", show_alert=True)
             return
-        await query.message.edit_text("اختر الإمام لتحديد روايتك:", reply_markup=get_readers_keyboard())
+        await query.message.edit_text("اختر الإمام الكريم لتحديد روايتك:", reply_markup=get_readers_keyboard())
 
     elif data == "delete_name":
         if user_id in students_list:
             del students_list[user_id]
             await show_main_menu(update, context)
         else:
-            await query.answer("اسمك غير مسجل في القائمة أصلاً!", show_alert=True)
+            await query.answer("عذراً، اسمك غير مسجل في القائمة أصلاً!", show_alert=True)
 
     elif data.startswith("reg_reader_"):
         reader_name = data.split("_")[2]
-        await query.message.edit_text(f"اختر رواية أو طريق عن الإمام {reader_name}:", reply_markup=get_riwayat_keyboard(reader_name))
+        await query.message.edit_text(f"اختر الرواية أو الطريق عن الإمام {reader_name}:", reply_markup=get_riwayat_keyboard(reader_name))
 
     elif data.startswith("reg_riwaya_"):
         riwaya_name = data.split("_")[2]
@@ -224,11 +242,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.chat.send_message("🔒 **عذراً، تم إغلاق باب التسجيل في القائمة الآن.**", parse_mode="Markdown")
         else:
             await query.message.chat.send_message("🔓 **تم فتح باب التسجيل في القائمة، يمكنكم الآن حجز أدواركم.**", parse_mode="Markdown")
-        await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة:", reply_markup=get_admin_keyboard())
+        await query.message.edit_text("⚙️ لوحة تحكم المشرف/ة الفاخرة:", reply_markup=get_admin_keyboard())
 
     elif data == "reset_new_list":
         students_list.clear()
-        await query.message.edit_text("تم بدء قائمة جديدة ✅\n⚙️ لوحة تحكم المشرف/ة:", reply_markup=get_admin_keyboard())
+        await query.message.edit_text("تم بدء قائمة جديدة مباركة ✅\n⚙️ لوحة تحكم المشرف/ة:", reply_markup=get_admin_keyboard())
 
     elif data == "back_to_main":
         await show_main_menu(update, context)
@@ -239,7 +257,6 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
         return
     text = msg.text.strip()
     
-    # الاستجابة فقط لصيغ كلمة إجازة
     allowed_words = ["إجازة", "اجازه", "اجازة"]
     if text in allowed_words:
         await show_main_menu(update, context)
@@ -268,4 +285,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
