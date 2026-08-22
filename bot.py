@@ -65,7 +65,7 @@ def get_formatted_text():
     selected_dua = random.choice(duas)
     selected_motivation = random.choice(motivations)
     
-    slot_icons = ["👑", "🌹", "✨", "🌼", "🕌", "🌺", "🍃", "🌟", "💐", "💫"]
+    slot_icons = ["👑", "🌹", "🕌", "🌼", "🕋", "🌺", "🍃", "🌟", "🕊", "📚", "🤲"]
     
     roles_text = ""
     for idx, (uid, data) in enumerate(students_list.items(), 1):
