@@ -3,9 +3,10 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import os
 import random
 import threading
-from telegram import KeyboardButton, ReplyKeyboardMarkup, Update
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     ApplicationBuilder,
+    CallbackQueryHandler,
     CommandHandler,
     MessageHandler,
     ContextTypes,
@@ -15,6 +16,7 @@ from telegram.ext import (
 list_is_open = True
 students_list = {}
 
+# أدعية متغيرة فاخرة ومباركة
 duas = [
     "⊰💎⊱ رَبِّ أَعِنِّى وَلا تُعِنْ عَلَيَّ، وَانْصُرْنِي وَلا تَنْصُرْ عَلَيَّ ⊰💎⊱",
     "⊰🌺⊱ اللَّهُمَّ إِنِّي أَسْأَلُكَ العَفْوَ وَالعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ ⊰🌺⊱",
@@ -22,6 +24,7 @@ duas = [
     "⊰🤲⊱ اللَّهُمَّ اجْعَلِ القُرْآنَ رَبِيعَ قُلُوبِنَا، وَنُورَ صُدُورِنَا ⊰🤲⊱",
 ]
 
+# عبارات تحفيزية رسمية وعميقة عن أهل القرآن
 motivations = [
     (
         "«أهل القرآن هم أهل الله وخاصته» — هنيئاً لمن اختاره الله ليحفظ كلامه في"
@@ -157,88 +160,277 @@ def get_formatted_text():
 {selected_dua}"""
 
 
-# دقة بناء الأزرار مع تمرير خصائص الألوان بالطريقة الصحيحة عبر api_kwargs
-def get_colored_reply_keyboard():
-  toggle_text = "🔓 فتح القائمة" if not list_is_open else "🔒 إغلاق القائمة"
-  toggle_style = {"bg_primary": True} if not list_is_open else {"bg_danger": True}
+def get_channel_keyboard():
+  return InlineKeyboardMarkup([
+      [
+          InlineKeyboardButton(
+              "💎 📝 أريد دور قراءة", callback_data="register_name"
+          )
+      ],
+      [
+          InlineKeyboardButton(
+              "❌ إزالة اسمي من القائمة", callback_data="delete_name"
+          )
+      ],
+      [
+          InlineKeyboardButton(
+              "⚙️ لوحة إعدادات المشرفين", callback_data="admin_main"
+          )
+      ],
+  ])
 
-  keyboard = [
-      [
-          KeyboardButton(
-              "📝 سجّلي اسمي", api_kwargs={"style": {"bg_primary": True}}
-          ),  # أزرق
-          KeyboardButton(
-              "❌ احذفي اسمي", api_kwargs={"style": {"bg_danger": True}}
-          ),  # أحمر
-      ],
-      [
-          KeyboardButton(
-              "✅ قرأتُ", api_kwargs={"style": {"bg_success": True}}
-          )  # أخضر
-      ],
-      [
-          KeyboardButton(toggle_text, api_kwargs={"style": toggle_style})
-      ],  # يتغير لونه حسب الحالة
-      [KeyboardButton("📋 عرض القائمة")],
-  ]
-  return ReplyKeyboardMarkup(
-      keyboard, resize_keyboard=True, is_persistent=True
+
+def get_admin_keyboard():
+  toggle_text = (
+      "🔒 إغلاق القائمة مؤقتاً" if list_is_open else "🔓 فتح القائمة للتسجيل"
   )
+  return InlineKeyboardMarkup([
+      [InlineKeyboardButton(toggle_text, callback_data="toggle_list")],
+      [
+          InlineKeyboardButton(
+              "✅ تعليم من أتم القراءة", callback_data="admin_mark_list"
+          )
+      ],
+      [
+          InlineKeyboardButton(
+              "🔄 تدوير وبدء قائمة جديدة", callback_data="reset_new_list"
+          )
+      ],
+      [
+          InlineKeyboardButton(
+              "🔙 العودة للقائمة الرئيسية", callback_data="back_to_main"
+          )
+      ],
+  ])
+
+
+def get_mark_student_keyboard():
+  keyboard = []
+  for uid, data in students_list.items():
+    keyboard.append([
+        InlineKeyboardButton(
+            f"👤 {data['name']}", callback_data=f"mark_{uid}"
+        )
+    ])
+  keyboard.append([
+      InlineKeyboardButton(
+          "🔙 رجوع لوحة المشرفين", callback_data="admin_main"
+      )
+  ])
+  return InlineKeyboardMarkup(keyboard)
+
+
+riwayat_dict = {
+    "نافع": ["قالون", "ورش"],
+    "ابن كثير": ["البزي", "قنبل"],
+    "أبو عمرو": ["الدوري", "السوسي"],
+    "ابن عامر": ["هشام", "ابن ذكوان"],
+    "عاصم": ["شعبة", "حفص"],
+    "حمزة": ["خلف", "خلّاد"],
+    "الكسائي": ["أبي الحارث", "الدوري"],
+    "أبو جعفر": ["إبن وردان", "إبن جماز"],
+    "يعقوب": ["رويس", "روُح"],
+    "خلف العاشر": ["إسحاق", "إدريس"],
+}
+
+
+def get_readers_keyboard():
+  keyboard = []
+  for reader in riwayat_dict.keys():
+    keyboard.append([
+        InlineKeyboardButton(
+            f"📖 الإمام {reader}", callback_data=f"reg_reader_{reader}"
+        )
+    ])
+  keyboard.append(
+      [InlineKeyboardButton("🔙 إلغاء والرجوع", callback_data="back_to_main")]
+  )
+  return InlineKeyboardMarkup(keyboard)
+
+
+def get_riwayat_keyboard(reader_name):
+  keyboard = []
+  for riwaya in riwayat_dict.get(reader_name, []):
+    keyboard.append([
+        InlineKeyboardButton(
+            f"🔹 رواية/طريق {riwaya}", callback_data=f"reg_riwaya_{riwaya}"
+        )
+    ])
+  keyboard.append([
+      InlineKeyboardButton(
+          "🔙 رجوع لاختيار القراء", callback_data="register_name"
+      )
+  ])
+  return InlineKeyboardMarkup(keyboard)
 
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
   text = get_formatted_text()
-  reply_markup = get_colored_reply_keyboard()
+  reply_markup = get_channel_keyboard()
 
-  target_message = update.message or update.channel_post
-  if target_message:
-    await target_message.reply_text(
-        text, parse_mode="HTML", reply_markup=reply_markup
-    )
+  if update.callback_query:
+    try:
+      await update.callback_query.message.edit_text(
+          text, parse_mode="HTML", reply_markup=reply_markup
+      )
+    except Exception:
+      pass
+  else:
+    target_message = update.message or update.channel_post
+    if target_message:
+      await target_message.reply_text(
+          text, parse_mode="HTML", reply_markup=reply_markup
+      )
+
+
+async def is_user_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+  query = update.callback_query
+  if not query or not query.from_user or not query.message:
+    return False
+  chat = query.message.chat
+  if chat.type == "private":
+    return True
+  try:
+    member = await context.bot.get_chat_member(chat.id, query.from_user.id)
+    return member.status in ["creator", "administrator"]
+  except Exception:
+    return False
+
+
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+  global list_is_open
+  query = update.callback_query
+  if not query:
+    return
+
+  try:
+    await query.answer()
+  except Exception:
+    pass
+
+  data = query.data
+  user_id = query.from_user.id
+  user_name = query.from_user.full_name
+
+  admin_actions = [
+      "admin_main",
+      "toggle_list",
+      "reset_new_list",
+      "admin_mark_list",
+  ]
+  if data in admin_actions or data.startswith("mark_"):
+    if not await is_user_admin(update, context):
+      try:
+        await query.answer(
+            "هذا خاص بالمشرفين الأفاضل فقط ❌", show_alert=True
+        )
+      except Exception:
+        pass
+      return
+
+  try:
+    if data == "admin_main":
+      await query.message.edit_text(
+          "⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard()
+      )
+
+    elif data == "admin_mark_list":
+      if not students_list:
+        await query.answer("القائمة فارغة تماماً!", show_alert=True)
+      else:
+        await query.message.edit_text(
+            "اختر الطالب لتعليم إتمامه القراءة:",
+            reply_markup=get_mark_student_keyboard(),
+        )
+
+    elif data.startswith("mark_"):
+      target_uid = int(data.split("_")[1])
+      if target_uid in students_list:
+        students_list[target_uid]["status"] = "✅"
+        await show_main_menu(update, context)
+
+    elif data == "register_name":
+      if not list_is_open:
+        await query.answer(
+            "عذراً، باب التسجيل مغلق مؤقتاً 🔒", show_alert=True
+        )
+        return
+      if user_id in students_list:
+        await query.answer(
+            "أنت مسجل بالفعل في هذه القائمة ⚠️", show_alert=True
+        )
+        return
+      await query.message.edit_text(
+          "اختر الإمام الكريم لتحديد روايتك:",
+          reply_markup=get_readers_keyboard(),
+      )
+
+    elif data == "delete_name":
+      if user_id in students_list:
+        del students_list[user_id]
+        await show_main_menu(update, context)
+      else:
+        await query.answer(
+            "عذراً، اسمك غير مسجل في القائمة أصلاً!", show_alert=True
+        )
+
+    elif data.startswith("reg_reader_"):
+      reader_name = data.split("_")[2]
+      await query.message.edit_text(
+          f"اختر الرواية أو الطريق عن الإمام {reader_name}:",
+          reply_markup=get_riwayat_keyboard(reader_name),
+      )
+
+    elif data.startswith("reg_riwaya_"):
+      riwaya_name = data.split("_")[2]
+      students_list[user_id] = {
+          "name": user_name,
+          "riwaya": riwaya_name,
+          "status": "❓",
+      }
+      await show_main_menu(update, context)
+
+    elif data == "toggle_list":
+      list_is_open = not list_is_open
+      status_msg = (
+          "🔒 **عذراً، تم إغلاق باب التسجيل في القائمة الآن.**"
+          if not list_is_open
+          else (
+              "🔓 **تم فتح باب التسجيل في القائمة، يمكنكم الآن حجز أدواركم.**"
+          )
+      )
+      try:
+        await query.message.chat.send_message(status_msg, parse_mode="Markdown")
+      except Exception:
+        pass
+      await query.message.edit_text(
+          "⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard()
+      )
+
+    elif data == "reset_new_list":
+      students_list.clear()
+      await query.message.edit_text(
+          "تم بدء قائمة جديدة مباركة ✅\n⚙️ لوحة تحكم المشرفين:",
+          reply_markup=get_admin_keyboard(),
+      )
+
+    elif data == "back_to_main":
+      await show_main_menu(update, context)
+  except Exception as e:
+    print(f"Error handling callback: {e}")
+
+
+async def handle_start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+  await show_main_menu(update, context)
 
 
 async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
-  global list_is_open
-  msg = update.message
+  msg = update.message or update.channel_post
   if not msg or not msg.text:
     return
   text = msg.text.strip()
-  user_id = msg.from_user.id
-  user_name = msg.from_user.full_name
 
-  if text in ["إجازة", "اجازه", "اجازة", "📋 عرض القائمة"]:
-    await show_main_menu(update, context)
-
-  elif text == "📝 سجّلي اسمي":
-    if not list_is_open:
-      await msg.reply_text("عذراً، باب التسجيل مغلق مؤقتاً 🔒")
-      return
-    if user_id in students_list:
-      await msg.reply_text("أنت مسجل بالفعل في هذه القائمة ⚠️")
-      return
-    students_list[user_id] = {
-        "name": user_name,
-        "riwaya": "حفص عن عاصم",
-        "status": "❓",
-    }
-    await show_main_menu(update, context)
-
-  elif text == "❌ احذفي اسمي":
-    if user_id in students_list:
-      del students_list[user_id]
-      await show_main_menu(update, context)
-    else:
-      await msg.reply_text("عذراً، اسمك غير مسجل في القائمة أصلاً!")
-
-  elif text == "✅ قرأتُ":
-    if user_id in students_list:
-      students_list[user_id]["status"] = "✅"
-      await show_main_menu(update, context)
-    else:
-      await msg.reply_text("اسمك غير موجود في القائمة لتعديله!")
-
-  elif text in ["🔒 إغلاق القائمة", "🔓 فتح القائمة"]:
-    list_is_open = not list_is_open
+  if text in ["إجازة", "اجازه", "اجازة", "قائمة", "القائمة"]:
     await show_main_menu(update, context)
 
 
@@ -270,12 +462,13 @@ def main():
       .build()
   )
 
-  app.add_handler(CommandHandler(["start", "show", "menu"], show_main_menu))
+  app.add_handler(CommandHandler(["start", "show", "menu"], handle_start_command))
   app.add_handler(
       MessageHandler((filters.TEXT & ~filters.COMMAND), handle_text_messages)
   )
+  app.add_handler(CallbackQueryHandler(button_handler))
 
-  print("البوت يعمل الآن بأزرار ملونة صحيحة...")
+  print("البوت يعمل الآن بنجاح...")
   app.run_polling()
 
 
