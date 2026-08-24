@@ -15,7 +15,6 @@ from telegram.ext import (
 list_is_open = True
 students_list = {}
 
-# أدعية متغيرة فاخرة ومباركة
 duas = [
     "⊰💎⊱ رَبِّ أَعِنِّى وَلا تُعِنْ عَلَيَّ، وَانْصُرْنِي وَلا تَنْصُرْ عَلَيَّ ⊰💎⊱",
     "⊰🌺⊱ اللَّهُمَّ إِنِّي أَسْأَلُكَ العَفْوَ وَالعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ ⊰🌺⊱",
@@ -158,21 +157,19 @@ def get_formatted_text():
 {selected_dua}"""
 
 
-# تصميم لوحة الأزرار الملونة الثابتة أسفل المحادثة
+# دقة بناء الأزرار مع تمرير خصائص الألوان بالطريقة الصحيحة عبر api_kwargs
 def get_colored_reply_keyboard():
-  # استخدام خصائص الألوان للزرار (Primary للأزرق، Danger للأحمر، Success للأخضر)
   toggle_text = "🔓 فتح القائمة" if not list_is_open else "🔒 إغلاق القائمة"
+  toggle_style = {"bg_primary": True} if not list_is_open else {"bg_danger": True}
 
   keyboard = [
       [
           KeyboardButton(
-              "📝 سجّلي اسمي",
-              api_kwargs={"style": {"bg_primary": True}},  # أزرق
-          ),
+              "📝 سجّلي اسمي", api_kwargs={"style": {"bg_primary": True}}
+          ),  # أزرق
           KeyboardButton(
-              "❌ احذفي اسمي",
-              api_kwargs={"style": {"bg_danger": True}},  # أحمر
-          ),
+              "❌ احذفي اسمي", api_kwargs={"style": {"bg_danger": True}}
+          ),  # أحمر
       ],
       [
           KeyboardButton(
@@ -180,15 +177,8 @@ def get_colored_reply_keyboard():
           )  # أخضر
       ],
       [
-          KeyboardButton(
-              toggle_text,
-              api_kwargs={
-                  "style": {
-                      "bg_primary" if not list_is_open else "bg_danger": True
-                  }
-              },
-          )
-      ],
+          KeyboardButton(toggle_text, api_kwargs={"style": toggle_style})
+      ],  # يتغير لونه حسب الحالة
       [KeyboardButton("📋 عرض القائمة")],
   ]
   return ReplyKeyboardMarkup(
@@ -226,7 +216,6 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
     if user_id in students_list:
       await msg.reply_text("أنت مسجل بالفعل في هذه القائمة ⚠️")
       return
-    # إضافة افتراضية برواية حفص أو البداية السريعة
     students_list[user_id] = {
         "name": user_name,
         "riwaya": "حفص عن عاصم",
@@ -249,7 +238,6 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
       await msg.reply_text("اسمك غير موجود في القائمة لتعديله!")
 
   elif text in ["🔒 إغلاق القائمة", "🔓 فتح القائمة"]:
-    # التحقق البسيط من المشرفين لو أردت، أو التبديل المباشر
     list_is_open = not list_is_open
     await show_main_menu(update, context)
 
@@ -287,7 +275,7 @@ def main():
       MessageHandler((filters.TEXT & ~filters.COMMAND), handle_text_messages)
   )
 
-  print("البوت يعمل الآن بأزرار ملونة بنجاح...")
+  print("البوت يعمل الآن بأزرار ملونة صحيحة...")
   app.run_polling()
 
 
