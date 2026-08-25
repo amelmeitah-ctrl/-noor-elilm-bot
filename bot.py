@@ -24,14 +24,12 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
-    # جدول حالة القائمة لكل قناة
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS channel_settings (
             chat_id BIGINT PRIMARY KEY,
             list_is_open BOOLEAN DEFAULT TRUE
         )
     """)
-    # جدول الطلاب مع ربطه بالـ chat_id الخاص بالقناة
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS students (
             chat_id BIGINT,
@@ -46,14 +44,12 @@ def init_db():
     cursor.close()
     conn.close()
 
-# تهيئة القاعدة عند بدء التشغيل
 if DATABASE_URL:
     try:
         init_db()
     except Exception as e:
         print(f"Database Initialization Error: {e}")
 
-# دوال مساعدة للتعامل مع قاعدة البيانات حسب الـ chat_id
 def get_list_status(chat_id: int) -> bool:
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -62,7 +58,6 @@ def get_list_status(chat_id: int) -> bool:
     cursor.close()
     conn.close()
     if row is None:
-        # الافتراضي أن القائمة مفتوحة
         return True
     return row["list_is_open"]
 
@@ -85,7 +80,6 @@ def get_students_list(chat_id: int) -> dict:
     cursor.close()
     conn.close()
     
-    # تحويل البيانات إلى قاموس مرتب حسب وسيلة التخزين السابقة
     students = {}
     for row in rows:
         students[row["user_id"]] = {
@@ -130,7 +124,7 @@ def clear_students(chat_id: int):
     cursor.close()
     conn.close()
 
-# ----------------- النصوص والأدعية والتحفيز -----------------
+# ----------------- النصوص والأدعية -----------------
 duas = [
     "⊰💎⊱ رَبِّ أَعِنِّى وَلا تُعِنْ عَلَيَّ، وَانْصُرْنِي وَلا تَنْصُرْ عَلَيَّ ⊰💎⊱",
     "⊰🌺⊱ اللَّهُمَّ إِنِّي أَسْأَلُكَ العَفْوَ وَالعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ ⊰🌺⊱",
@@ -217,7 +211,7 @@ def get_formatted_text(chat_id: int):
 ​༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫
 {selected_dua}"""
 
-# ----------------- لوحات المفاتيح (Keyboards) -----------------
+# ----------------- لوحات المفاتيح -----------------
 def get_channel_keyboard():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("💎 📝 أريد دور قراءة", callback_data="register_name")],
@@ -245,7 +239,7 @@ def get_mark_student_keyboard(chat_id: int):
 
 riwayat_dict = {
     "نافع": ["قالون", "ورش"],
-    "ابن كثير": ["ابن كثير"],  # تم تعديلها لتسجل مباشرة باسم ابن كثير
+    "ابن كثير": ["ابن كثير"],
     "أبو عمرو": ["الدوري", "السوسي"],
     "ابن عامر": ["هشام", "ابن ذكوان"],
     "عاصم": ["شعبة", "حفص"],
@@ -270,11 +264,18 @@ def get_riwayat_keyboard(reader_name):
     keyboard.append([InlineKeyboardButton("🔙 رجوع لاختيار القراء", callback_data="register_name")])
     return InlineKeyboardMarkup(keyboard)
 
-# ----------------- دوال العرض والتحكم -----------------
+# ----------------- المعالجات ودوال العرض -----------------
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    chat_id = query.message.chat.id if query and query.message else (update.message.chat.id if update.message else update.channel_post.chat.id)
-    
+    if query and query.message:
+        chat_id = query.message.chat.id
+    elif update.message:
+        chat_id = update.message.chat.id
+    elif update.channel_post:
+        chat_id = update.channel_post.chat.id
+    else:
+        return
+
     text = get_formatted_text(chat_id)
     reply_markup = get_channel_keyboard()
 
@@ -306,7 +307,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not query or not query.message:
         return
 
-    chat_id = query.message.chat.id
+    chat_id = query.message.chat.id  # هذا يحدد بدقة مكان النقرة (سواء في القناة أو في الخاص)
     try:
         await query.answer()
     except Exception:
@@ -364,7 +365,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         elif data.startswith("reg_reader_"):
             reader_name = data.split("_")[2]
-            # إذا كان الإمام هو ابن كثير، نسجله مباشرة دون المرور بقائمة فرعية
             if reader_name == "ابن كثير":
                 add_student(chat_id, user_id, user_name, "ابن كثير", "❓")
                 await show_main_menu(update, context)
@@ -408,13 +408,13 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
     if text in ["إجازة", "اجازه", "اجازة", "قائمة", "القائمة"]:
         await show_main_menu(update, context)
 
-# ----------------- خادم الويب (Health Check) -----------------
+# ----------------- خادم الويب -----------------
 class SimpleHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header("Content-type", "text/plain")
         self.end_headers()
-        self.wfile.write(b"Bot is running successfully with PostgreSQL!")
+        self.wfile.write(b"Bot is running successfully with complete chat isolation!")
 
     def do_HEAD(self):
         self.send_response(200)
@@ -425,11 +425,9 @@ def run_server():
     server = HTTPServer(("0.0.0.0", port), SimpleHandler)
     server.serve_forever()
 
-# ----------------- تشغيل البوت -----------------
 def main():
     threading.Thread(target=run_server, daemon=True).start()
 
-    # استخدام concurrent_updates لتحمل عدد أكبر من الطلبات
     app = (
         ApplicationBuilder()
         .token("8818665087:AAGPBN9ODdoBjwl4LtVcfWrHdQJQO8HrNrY")
@@ -441,8 +439,9 @@ def main():
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND), handle_text_messages))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بنجاح مع قاعدة بيانات PostgreSQL المستقلة لكل قناة...")
+    print("البوت يعمل الآن بنجاح مع العزل الكامل لكل محادثة أو قناة...")
     app.run_polling()
 
 if __name__ == "__main__":
     main()
+
