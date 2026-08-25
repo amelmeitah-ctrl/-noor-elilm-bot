@@ -19,6 +19,8 @@ from telegram.ext import (
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 def get_db_connection():
+    if not DATABASE_URL:
+        raise ValueError("خطأ: متغير البيئة DATABASE_URL غير معرف أو مفقود في إعدادات المنصة!")
     return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
 def init_db():
@@ -307,7 +309,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not query or not query.message:
         return
 
-    chat_id = query.message.chat.id  # هذا يحدد بدقة مكان النقرة (سواء في القناة أو في الخاص)
+    chat_id = query.message.chat.id
     try:
         await query.answer()
     except Exception:
