@@ -430,7 +430,7 @@ def main():
 
     app = (
         ApplicationBuilder()
-        .token("8818665087:AAGPBN9ODdoBjwl4LtVcfWrHdQJQO8HrNrY")
+        .token("8818665087:AAGFomHBBZmm3Kk1gbC-dYO3aJFuGzylW18")
         .concurrent_updates(20)
         .build()
     )
