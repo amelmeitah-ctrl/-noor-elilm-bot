@@ -1,10 +1,6 @@
 from datetime import datetime
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import os
 import random
-import threading
-import psycopg2
-from psycopg2.extras import RealDictCursor
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     ApplicationBuilder,
@@ -14,6 +10,8 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 # ----------------- إعدادات قاعدة البيانات (PostgreSQL) -----------------
 DATABASE_URL = os.environ.get("DATABASE_URL")
@@ -410,26 +408,8 @@ async def handle_text_messages(update: Update, context: ContextTypes.DEFAULT_TYP
     if text in ["إجازة", "اجازه", "اجازة", "قائمة", "القائمة"]:
         await show_main_menu(update, context)
 
-# ----------------- خادم الويب -----------------
-class SimpleHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-        self.wfile.write(b"Bot is running successfully with complete chat isolation!")
-
-    def do_HEAD(self):
-        self.send_response(200)
-        self.end_headers()
-
-def run_server():
-    port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("0.0.0.0", port), SimpleHandler)
-    server.serve_forever()
-
+# ----------------- الدالة الرئيسية -----------------
 def main():
-    threading.Thread(target=run_server, daemon=True).start()
-
     app = (
         ApplicationBuilder()
         .token("8818665087:AAH18i0YqRZcrRPZ3j8-MFJuFdm2fjxCHNI")
@@ -441,7 +421,7 @@ def main():
     app.add_handler(MessageHandler((filters.TEXT & ~filters.COMMAND), handle_text_messages))
     app.add_handler(CallbackQueryHandler(button_handler))
 
-    print("البوت يعمل الآن بنجاح مع العزل الكامل لكل محادثة أو قناة...")
+    print("البوت يعمل الآن بنجاح...")
     app.run_polling()
 
 if __name__ == "__main__":
