@@ -13,39 +13,31 @@ from telegram.ext import (
     filters,
 )
 
-list_is_open = True
-students_list = {}
+# قاموس لتخزين حالة القائمة (مفتوحة/مغلقة) لكل قناة على حدة
+channels_status = {}
+# قاموس لتخزين قوائم الطلاب لكل قناة بشكل مستقل (المفتاح هو chat_id)
+channels_students = {}
 
-# أدعية متغيرة فاخرة ومباركة
+# أدعية نبوية قصيرة ومباركة باستخدام الرموز المسموحة فقط
 duas = [
-    "⊰💎⊱ رَبِّ أَعِنِّى وَلا تُعِنْ عَلَيَّ، وَانْصُرْنِي وَلا تَنْصُرْ عَلَيَّ ⊰💎⊱",
-    "⊰🌺⊱ اللَّهُمَّ إِنِّي أَسْأَلُكَ العَفْوَ وَالعَافِيَةَ فِي الدُّنْيَا وَالآخِرَةِ ⊰🌺⊱",
-    "⊰💎⊱ اللَّهُمَّ يَا مُقَلِّبَ القُلُوبِ ثَبِّتْ قَلْبِي عَلَى دِينِكَ ⊰💎⊱",
-    "⊰🤲⊱ اللَّهُمَّ اجْعَلِ القُرْآنَ رَبِيعَ قُلُوبِنَا، وَنُورَ صُدُورِنَا ⊰🤲⊱",
+    "🕊 رب أعني ولا تعن علي، وانصرني ولا تنصر علي 💎",
+    "🌺 اللهم إني أسألك العفو والعافية في الدنيا الآخرة 👑",
+    "💎 اللهم يا مقليب القلوب ثبت قلبي على دينك 🕊",
+    "👑 اللهم إني أعوذ بك من العجز والكسل 🌺",
 ]
 
-# عبارات تحفيزية رسمية وعميقة عن أهل القرآن
+# عبارات تحفيزية رسمية وعميقة عن أهل القرآن باستخدام الرموز المسموحة فقط
 motivations = [
-    (
-        "«أهل القرآن هم أهل الله وخاصته» — هنيئاً لمن اختاره الله ليحفظ كلامه في"
-        " صدره."
-    ),
-    (
-        "قال ابن مسعود رضي الله عنه: «ينبغي لحامل القرآن أن يُعرف بليله إذا"
-        " الناس نهار، وبنومه إذا الناس سهار»."
-    ),
-    (
-        "قال الإمام الشاطبي رحمه الله: «وفي الصدر قرآنٌ يورثُ صاحبه عِزّاً ومجدًا"
-        " لا يُبارى»."
-    ),
-    (
-        "حفظ القرآن في الصدر يورث خشية الله، ورفعة في الدارين، ونوراً يقذفه الله"
-        " في قلب صاحبه."
-    ),
-    (
-        "القرآن كنزٌ لا يفنى، وكلما بذلتَ له وقتك وعزيمتك، أعطاك من بركاته وأسراره."
-    ),
+    "👑 أهل القرآن هم أهل الله وخاصته — هنيئاً لمن اختاره الله ليحفظ كلامه في صدره 🌺",
+    "💎 قال ابن مسعود رضي الله عنه: ينبغي لحامل القرآن أن يُعرف بليله إذا الناس نهار 🕊",
+    "🌺 القرآن كنز لا يفنى، وكلما بذلت له وقتك وعزيمتك أعطاك من بركاته 👑",
+    "🕊 حفظ القرآن في الصدر يورث خشية الله ورفعة في الدارين ونوراً في القلب 💎",
 ]
+
+def arabic_numerals(n):
+    # تحويل الأرقام العادية إلى الأرقام العربية (١، ٢، ٣...)
+    ar_digits = {"0": "٠", "1": "١", "2": "٢", "3": "٣", "4": "٤", "5": "٥", "6": "٦", "7": "٧", "8": "٨", "9": "٩"}
+    return "".join(ar_digits.get(char, char) for char in str(n))
 
 def get_hijri_date():
     now = datetime.now()
@@ -75,7 +67,7 @@ def get_hijri_date():
             h_year += 1
     h_day = current_day_count + 1
     h_month_name = hijri_months[m_index][0]
-    return f"{h_day} {h_month_name} {h_year} هـ"
+    return f"{arabic_numerals(h_day)} {h_month_name} {arabic_numerals(h_year)} هـ"
 
 def get_current_date():
     now = datetime.now()
@@ -89,72 +81,70 @@ def get_current_date():
         "Saturday": "السبت",
     }
     months_ar = {
-        1: "يناير",
-        2: "فبراير",
-        3: "مارس",
-        4: "أبريل",
-        5: "مايو",
-        6: "يونيو",
-        7: "يوليو",
-        8: "أغسطس",
-        9: "سبتمبر",
-        10: "أكتوبر",
-        11: "نوفمبر",
-        12: "ديسمبر",
+        1: "يناير", 2: "فبراير", 3: "مارس", 4: "أبريل", 5: "مايو", 6: "يونيو",
+        7: "يوليو", 8: "أغسطس", 9: "سبتمبر", 10: "أكتوبر", 11: "نوفمبر", 12: "ديسمبر",
     }
 
     day_name = days_ar.get(now.strftime("%A"), "")
-    day_num = now.strftime("%d")
+    day_num = arabic_numerals(now.strftime("%d"))
     month_name = months_ar.get(now.month, "")
-    year_num = now.strftime("%Y")
+    year_num = arabic_numerals(now.strftime("%Y"))
     hijri_date = get_hijri_date()
 
-    return f"• {day_name} {day_num} {month_name} {year_num} مـ — {hijri_date}"
+    return f"🕊 {day_name} {day_num} {month_name} {year_num} مـ — {hijri_date} 👑"
 
-def get_formatted_text():
-    status_text = "مفتوحة 🔓 🟢" if list_is_open else "مغلقة 🔒 🔴"
+def get_formatted_text(chat_id):
+    is_open = channels_status.get(chat_id, True)
+    status_text = "مفتوحة 🔓 💎" if is_open else "مغلقة 🔒 🌺"
+    
     selected_dua = random.choice(duas)
     selected_motivation = random.choice(motivations)
 
+    # الرمزين المطلوبين فقط بالتناوب
     slot_icons = [
-        "👑", "🌹", "🕌", "🌼", "🕋", "🌺", "🍃", "🌟", "🕊", "📚", "🤲",
+        "🌺 ⃞ـ💎",
+        "👑 ⃞ـ💎",
     ]
 
+    chat_students = channels_students.get(chat_id, {})
+
     roles_text = ""
-    for idx, (uid, data) in enumerate(students_list.items(), 1):
+    for idx, (uid, data) in enumerate(chat_students.items(), 1):
         icon = slot_icons[(idx - 1) % len(slot_icons)]
         profile_link = f"<a href='tg://user?id={uid}'>{data['name']}</a>"
+        formatted_idx = arabic_numerals(idx)
         roles_text += (
-            f"{idx} {icon} ⃞ـ💎 {profile_link} — {data['riwaya']} {data['status']}\n"
+            f"{formatted_idx} {icon} {profile_link} — {data['riwaya']} {data['status']}\n"
         )
 
     if not roles_text:
-        roles_text = "لا توجد أدوار مسجلة حتى الآن، بادر بحجز دورك.\n"
+        roles_text = "لا توجد أدوار مسجلة حتى الآن في هذه القناة، بادر بحجز دورك 🕊\n"
 
-    return f"""📚👑   <b>أكاديمية نور العلم للقراءة والإقراء والمتون العلمية</b>    👑📚
+    return f"""👑 <b>أكاديمية نور العلم للقراءة والإقراء والمتون العلمية</b> 💎
 <u>{get_current_date()}</u>
 
-🌺✨⌯⌲ {selected_motivation} ⌯⌲✨🌺
+🌺 ⌯⌲ {selected_motivation} ⌯⌲ 🕊
 
-•🌺🕊 <b>حلقة الإجازة في حفظ القرآن الكريم بالقراءات العشر</b> 🌺🕊
+• <b>حلقة الإجازة في حفظ القرآن الكريم بالقراءات العشر</b> 👑
 
 • <b>حالة القائمة:</b> {status_text}
-​༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫
-✨📝 <b>قائمة الأدوار:</b> 📝✨
+🕊💎━━━━━━━━━━━━━━━━━━━━━━💎🕊
+✨ <b>قائمة الأدوار:</b> ✨
 
 {roles_text}
-​༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫━━━━━━━━━━━━━━༄ؘ ۪۪۫۫ ▹◃ ༄ؘ ۪۪۫۫
+🕊💎━━━━━━━━━━━━━━━━━━━━━━💎🕊
 {selected_dua}"""
 
 def get_channel_keyboard():
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton("💎 📝 أريد دور قراءة", callback_data="register_name")],
-        [InlineKeyboardButton("❌ إزالة اسمي من القائمة", callback_data="delete_name")],
-        [InlineKeyboardButton("⚙️ لوحة إعدادات المشرفين", callback_data="admin_main")],
+        [InlineKeyboardButton("💎 أريد دور قراءة", callback_data="register_name")],
+        [InlineKeyboardButton("🌺 إزالة اسمي من القائمة", callback_data="delete_name")],
+        [InlineKeyboardButton("👑 لوحة إعدادات المشرفين", callback_data="admin_main")],
     ])
 
-def get_admin_keyboard():
-    toggle_text = "🔒 إغلاق القائمة مؤقتاً" if list_is_open else "🔓 فتح القائمة للتسجيل"
+def get_admin_keyboard(chat_id):
+    is_open = channels_status.get(chat_id, True)
+    toggle_text = "🔒 إغلاق القائمة مؤقتاً" if is_open else "🔓 فتح القائمة للتسجيل"
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(toggle_text, callback_data="toggle_list")],
         [InlineKeyboardButton("✅ تعليم من أتم القراءة", callback_data="admin_mark_list")],
@@ -162,9 +152,10 @@ def get_admin_keyboard():
         [InlineKeyboardButton("🔙 العودة للقائمة الرئيسية", callback_data="back_to_main")],
     ])
 
-def get_mark_student_keyboard():
+def get_mark_student_keyboard(chat_id):
     keyboard = []
-    for uid, data in students_list.items():
+    chat_students = channels_students.get(chat_id, {})
+    for uid, data in chat_students.items():
         keyboard.append([InlineKeyboardButton(f"👤 {data['name']}", callback_data=f"mark_{uid}")])
     keyboard.append([InlineKeyboardButton("🔙 رجوع لوحة المشرفين", callback_data="admin_main")])
     return InlineKeyboardMarkup(keyboard)
@@ -197,12 +188,15 @@ def get_riwayat_keyboard(reader_name):
     return InlineKeyboardMarkup(keyboard)
 
 async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = get_formatted_text()
+    query = update.callback_query
+    chat_id = query.message.chat.id if query else (update.message.chat.id if update.message else update.channel_post.chat.id)
+    
+    text = get_formatted_text(chat_id)
     reply_markup = get_channel_keyboard()
 
-    if update.callback_query:
+    if query:
         try:
-            await update.callback_query.message.edit_text(text, parse_mode="HTML", reply_markup=reply_markup)
+            await query.message.edit_text(text, parse_mode="HTML", reply_markup=reply_markup)
         except Exception:
             pass
     else:
@@ -224,14 +218,19 @@ async def is_user_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> b
         return False
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    global list_is_open
     query = update.callback_query
     if not query:
         return
 
+    chat_id = query.message.chat.id
     data = query.data
     user_id = query.from_user.id
     user_name = query.from_user.full_name
+
+    if chat_id not in channels_status:
+        channels_status[chat_id] = True
+    if chat_id not in channels_students:
+        channels_students[chat_id] = {}
 
     admin_actions = ["admin_main", "toggle_list", "reset_new_list", "admin_mark_list"]
     if data in admin_actions or data.startswith("mark_"):
@@ -249,53 +248,54 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if data == "admin_main":
-            await query.message.edit_text("⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard())
+            await query.message.edit_text("⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard(chat_id))
         elif data == "admin_mark_list":
-            if not students_list:
+            if not channels_students[chat_id]:
                 await query.answer("القائمة فارغة تماماً!", show_alert=True)
             else:
-                await query.message.edit_text("اختر الطالب لتعليم إتمامه القراءة:", reply_markup=get_mark_student_keyboard())
+                await query.message.edit_text("اختر الطالب لتعليم إتمامه القراءة:", reply_markup=get_mark_student_keyboard(chat_id))
         elif data.startswith("mark_"):
             target_uid = int(data.split("_")[1])
-            if target_uid in students_list:
-                students_list[target_uid]["status"] = "✅"
+            if target_uid in channels_students[chat_id]:
+                channels_students[chat_id][target_uid]["status"] = "✅"
                 await show_main_menu(update, context)
         elif data == "register_name":
-            if not list_is_open:
+            if not channels_status[chat_id]:
                 await query.answer("عذراً، باب التسجيل مغلق مؤقتاً 🔒", show_alert=True)
                 return
-            if user_id in students_list:
+            if user_id in channels_students[chat_id]:
                 await query.answer("أنت مسجل بالفعل في هذه القائمة ⚠️", show_alert=True)
                 return
             await query.message.edit_text("اختر الإمام الكريم لتحديد روايتك:", reply_markup=get_readers_keyboard())
         elif data == "delete_name":
-            if user_id in students_list:
-                del students_list[user_id]
+            if user_id in channels_students[chat_id]:
+                del channels_students[chat_id][user_id]
                 await show_main_menu(update, context)
             else:
                 await query.answer("عذراً، اسمك غير مسجل في القائمة أصلاً!", show_alert=True)
         elif data.startswith("reg_reader_"):
             reader_name = data.split("_")[2]
             if reader_name == "ابن كثير":
-                students_list[user_id] = {"name": user_name, "riwaya": "ابن كثير", "status": "❓"}
+                channels_students[chat_id][user_id] = {"name": user_name, "riwaya": "ابن كثير", "status": "❓"}
                 await show_main_menu(update, context)
             else:
                 await query.message.edit_text(f"اختر الرواية أو الطريق عن الإمام {reader_name}:", reply_markup=get_riwayat_keyboard(reader_name))
         elif data.startswith("reg_riwaya_"):
             riwaya_name = data.split("_")[2]
-            students_list[user_id] = {"name": user_name, "riwaya": riwaya_name, "status": "❓"}
+            channels_students[chat_id][user_id] = {"name": user_name, "riwaya": riwaya_name, "status": "❓"}
             await show_main_menu(update, context)
         elif data == "toggle_list":
-            list_is_open = not list_is_open
-            status_msg = "🔒 **عذراً، تم إغلاق باب التسجيل في القائمة الآن.**" if not list_is_open else "🔓 **تم فتح باب التسجيل في القائمة، يمكنكم الآن حجز أدواركم.**"
+            channels_status[chat_id] = not channels_status[chat_id]
+            is_open = channels_status[chat_id]
+            status_msg = "🔒 **عذراً، تم إغلاق باب التسجيل في القائمة الآن.**" if not is_open else "🔓 **تم فتح باب التسجيل في القائمة، يمكنكم الآن حجز أدواركم.**"
             try:
                 await query.message.chat.send_message(status_msg, parse_mode="Markdown")
             except Exception:
                 pass
-            await query.message.edit_text("⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard())
+            await query.message.edit_text("⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard(chat_id))
         elif data == "reset_new_list":
-            students_list.clear()
-            await query.message.edit_text("تم بدء قائمة جديدة مباركة ✅\n⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard())
+            channels_students[chat_id].clear()
+            await query.message.edit_text("تم بدء قائمة جديدة مباركة لهذه القناة ✅\n⚙️ لوحة تحكم المشرفين:", reply_markup=get_admin_keyboard(chat_id))
         elif data == "back_to_main":
             await show_main_menu(update, context)
     except Exception as e:
@@ -328,7 +328,6 @@ def run_server():
     server.serve_forever()
 
 def main():
-    # تشغيل سيرفر الـ HTTP في الخلفية لمتطلبات منصة Render
     threading.Thread(target=run_server, daemon=True).start()
 
     app = (
@@ -342,7 +341,6 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
 
     print("البوت يعمل الآن بنجاح...")
-    # استخدام drop_pending_updates لتجاهل أي طلبات معلقة سابقة ومنع تداخل النسخ
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
